@@ -217,7 +217,7 @@ export function ExerciseView({
 
 export function ResultBadge({ r }: { r?: ExResult }) {
   if (!r) return null
-  if (r.scoreFirst == null) return <span className="result-badge neutral">{r.teacher && r.fields.length ? 'Отправлено на проверку' : 'Выполнено'}</span>
+  if (r.scoreFirst == null) return <span className="result-badge neutral">{r.fields.length ? 'Ответ сохранён' : 'Выполнено'}</span>
   const p = Math.round(r.scoreFirst * 100)
   return <span className={`result-badge ${p >= 90 ? 'great' : p >= 70 ? 'good' : 'weak'}`}>{p}% с первой попытки</span>
 }
