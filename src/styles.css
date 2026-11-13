@@ -123,6 +123,10 @@ h3 {
 .topbar nav a:hover {
   color: var(--ink);
 }
+.topbar nav .nav-icon,
+.topbar nav .nav-short {
+  display: none;
+}
 .topbar nav a.on {
   background: var(--surface);
   color: var(--ink);
@@ -651,6 +655,10 @@ main {
 .player input[type='range'] {
   width: 100%;
   accent-color: var(--mc);
+}
+.player-extras {
+  display: flex;
+  gap: 6px;
 }
 .player-time {
   font-variant-numeric: tabular-nums;
@@ -1722,32 +1730,195 @@ th {
 }
 
 @media (max-width: 720px) {
-  main {
-    padding: 18px 14px 60px;
+  :root {
+    --tabbar-h: 62px;
   }
+  main {
+    padding: 14px 12px calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom));
+  }
+  .app.in-test main {
+    padding-bottom: 40px;
+  }
+  h1 {
+    font-size: 1.45rem;
+  }
+  /* верхняя полоса: только логотип; навигация уезжает вниз */
   .topbar {
-    flex-wrap: wrap;
     gap: 8px;
     padding: 10px 14px;
+    background: var(--bg);
+    backdrop-filter: none;
+  }
+  .outbox-dot {
+    margin-left: auto;
   }
   .topbar nav {
-    margin-left: 0;
-    overflow-x: auto;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    margin: 0;
+    gap: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+    padding: 0 4px env(safe-area-inset-bottom);
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 18px rgba(29, 35, 64, 0.06);
   }
+  .topbar nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border-radius: 0;
+    font-size: 0.72rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .topbar nav a.on {
+    background: none;
+    box-shadow: none;
+    color: var(--primary);
+  }
+  .topbar nav a.on .nav-icon {
+    background: #e6e8f6;
+  }
+  .topbar nav .nav-icon {
+    display: block;
+    width: 44px;
+    height: 28px;
+    padding: 3px 11px;
+    border-radius: 14px;
+  }
+  .topbar nav .nav-long {
+    display: none;
+  }
+  .topbar nav .nav-short {
+    display: block;
+  }
+  .step-progress,
+  .test-bar {
+    top: 50px;
+  }
+
+  /* главная */
   .hero-under {
-    margin-top: -60px;
+    margin-top: 8px;
+  }
+  .hero-under h1 {
+    font-size: 1.3rem;
+  }
+  .hero-stats {
+    flex-wrap: wrap;
+    gap: 6px 16px;
+  }
+
+  /* упражнения */
+  .exercise {
+    padding: 16px 14px;
   }
   .match,
   .pairs-cols {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
-  .test-bar {
+  .player {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 8px 10px;
+    border-radius: var(--r-md);
+    padding: 6px 10px 6px 6px;
   }
-  .exercise {
-    padding: 18px 16px;
+  .player-mid {
+    min-width: 0;
+  }
+  .player-extras {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    padding-left: 54px;
+  }
+  .grid-wrap {
+    max-width: 100%;
+  }
+  .letter-grid {
+    gap: 2px;
+  }
+  .letter-grid > * {
+    min-width: 0;
+  }
+  .cell {
+    min-width: 0;
+    padding: 0;
+    font-size: 0.85rem;
+    border-radius: 4px;
+  }
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* иначе iPhone приближает страницу при вводе */
+  }
+
+  /* диктант */
+  .dictation {
+    padding: 18px 14px;
+  }
+  .dict-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dict-form input {
+    width: 100%;
+    font-size: 1.3rem;
+  }
+  .dict-ru {
+    font-size: 1.4rem;
+  }
+
+  /* контрольная */
+  .test-bar {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 2px 10px;
+    padding: 8px 8px 8px 14px;
+  }
+  .tb-title {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #c4c8de;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tb-done {
+    font-size: 0.8rem;
+  }
+  .tb-time {
+    margin-left: 0;
+    font-size: 1.2rem;
+  }
+
+  /* статистика */
+  .hbar {
+    grid-template-columns: 92px 1fr 40px;
+    gap: 8px;
+    font-size: 0.9rem;
+  }
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  th,
+  td {
+    padding: 8px 10px;
+  }
+  .author-form input {
+    width: 100%;
   }
 }
 

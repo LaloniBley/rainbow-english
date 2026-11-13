@@ -87,7 +87,7 @@ export function AudioPlayer({
         {fmt(t)} / {fmt(dur)}
       </span>
       {!compact && (
-        <>
+        <div className="player-extras">
           <button
             className="ghost small"
             onClick={() => {
@@ -100,7 +100,7 @@ export function AudioPlayer({
           <button className={`ghost small ${slow ? 'on' : ''}`} onClick={() => setSlow((s) => !s)} title="Медленнее">
             0,75×
           </button>
-        </>
+        </div>
       )}
     </div>
   )

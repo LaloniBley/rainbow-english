@@ -179,7 +179,7 @@ export default function TestPage({ moduleId, testId }: { moduleId: string; testI
         <div className={`test-bar ${left < 5 * 60000 ? 'warn' : ''}`}>
           <span className="tb-title">{test.title}</span>
           <span className="tb-done">
-            Готово заданий: {answered} из {v.exercises.length}
+            Готово: {answered} из {v.exercises.length}
           </span>
           <span className="tb-time" aria-live="polite">
             {fmt(left)}
@@ -222,7 +222,7 @@ export default function TestPage({ moduleId, testId }: { moduleId: string; testI
             <div className="modal-box">
               <h2>Сдать работу?</h2>
               <p>
-                Готово заданий: {answered} из {v.exercises.length}. После сдачи ответы изменить нельзя.
+                Готово: {answered} из {v.exercises.length}. После сдачи ответы изменить нельзя.
               </p>
               <div className="row">
                 <button className="ghost" onClick={() => setConfirm(false)}>

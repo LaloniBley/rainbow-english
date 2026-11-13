@@ -340,7 +340,7 @@ export function WordSet({ ex, answers, set, marks, locked, reveal }: TypeProps<W
     <div className="wordset">
       {ex.grid && (
         <div className="grid-wrap">
-          <div className="letter-grid" style={{ gridTemplateColumns: `repeat(${ex.grid[0].split(' ').length}, 1fr)` }}>
+          <div className="letter-grid" style={{ gridTemplateColumns: `repeat(${ex.grid[0].split(' ').length}, minmax(0, 1fr))` }}>
             {ex.grid.flatMap((row, r) =>
               row.split(' ').map((ch, c) => {
                 const k = `${r}-${c}`
