@@ -1,0 +1,29 @@
+{
+  "name": "rainbow-marina",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "pack-module": "node scripts/pack-module.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/onest": "^5.1.0",
+    "@fontsource-variable/unbounded": "^5.1.0",
+    "idb": "^8.0.0",
+    "jszip": "^3.10.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "ajv": "^8.17.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2",
+    "vite-plugin-pwa": "^0.20.1"
+  }
+}

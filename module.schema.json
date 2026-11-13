@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Модуль Rainbow English",
+  "type": "object",
+  "required": ["id", "version", "number", "title", "color", "steps", "tests"],
+  "properties": {
+    "id": { "type": "string", "description": "Постоянный id модуля, например module-02. Не меняй его после выдачи." },
+    "version": { "type": "integer", "minimum": 1, "description": "Увеличивай при каждой правке, чтобы обновление встало поверх." },
+    "number": { "type": "integer", "minimum": 1, "maximum": 9 },
+    "title": { "type": "string" },
+    "color": { "type": "string", "description": "Цвет дуги радуги, например #F28C28" },
+    "grading": {
+      "type": "object",
+      "properties": { "five": { "type": "number" }, "four": { "type": "number" }, "three": { "type": "number" } }
+    },
+    "steps": { "type": "array", "items": { "$ref": "#/definitions/step" } },
+    "tests": { "type": "array", "items": { "$ref": "#/definitions/test" } }
+  },
+  "definitions": {
+    "source": {
+      "type": "object",
+      "properties": {
+        "book": { "enum": ["sb1", "sb2", "wb", "test"], "description": "sb1/sb2 — учебник ч.1/ч.2, wb — рабочая тетрадь" },
+        "page": { "type": "integer" },
+        "ex": { "type": ["integer", "string"] }
+      }
+    },
+    "media": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+    "word": {
+      "type": "object",
+      "required": ["id", "en"],
+      "properties": {
+        "id": { "type": "string" },
+        "en": { "type": "string" },
+        "ru": { "type": "string" },
+        "tr": { "type": "string", "description": "Транскрипция, например [bed]" },
+        "img": { "type": "string" },
+        "audio": { "type": "string" },
+        "name": { "type": "boolean", "description": "Имя собственное: в диктанте только на слух" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": ["id", "number", "title", "vocab", "together", "self"],
+      "properties": {
+        "id": { "type": "string" },
+        "number": { "type": "integer" },
+        "title": { "type": "string" },
+        "summingUp": { "type": "boolean" },
+        "note": { "type": "string", "description": "Записка, которую она увидит в начале степа" },
+        "dictationMode": { "enum": ["write", "choose"] },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "vocab": { "type": "array", "items": { "$ref": "#/definitions/word" } },
+        "together": { "type": "array", "items": { "$ref": "#/definitions/exercise" } },
+        "self": { "type": "array", "items": { "$ref": "#/definitions/exercise" } }
+      }
+    },
+    "exercise": {
+      "type": "object",
+      "required": ["id", "type", "instruction", "skill"],
+      "properties": {
+        "id": { "type": "string", "description": "Постоянный id, например s08-sb-03. По нему хранится её результат." },
+        "type": { "enum": ["listen_repeat", "info", "choose", "match", "gap", "copy", "order", "sort", "word_set", "free"] },
+        "instruction": { "type": "string" },
+        "note": { "type": "string" },
+        "skill": { "enum": ["listening", "reading", "writing", "vocab", "grammar", "speaking"] },
+        "source": { "$ref": "#/definitions/source" },
+        "img": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "audio": { "$ref": "#/definitions/media" },
+        "checkAudio": { "$ref": "#/definitions/media" },
+        "teacher": { "type": "boolean", "description": "Ответы без ключа: идут тебе в отчёт с пометкой «проверь сам»" },
+        "lines": { "type": "array", "description": "listen_repeat: строки текста; copy: [{id, sample}]" },
+        "ttsLines": { "type": "boolean" },
+        "text": { "type": "string" },
+        "items": { "type": "array" },
+        "free": { "type": "boolean" },
+        "pairs": { "type": "array" },
+        "leftTitle": { "type": "string" },
+        "rightTitle": { "type": "string" },
+        "caseSensitive": { "type": "boolean" },
+        "inline": { "type": "boolean" },
+        "times": { "type": "integer" },
+        "answer": { "type": "array", "items": { "type": "string" } },
+        "buckets": { "type": "array" },
+        "words": { "type": "array" },
+        "count": { "type": "integer" },
+        "accept": { "type": "array", "items": { "type": "string" } },
+        "grid": { "type": "array", "items": { "type": "string" } },
+        "example": { "type": "string" }
+      }
+    },
+    "test": {
+      "type": "object",
+      "required": ["id", "kind", "title", "minutes", "variants"],
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "enum": ["block", "half", "year"] },
+        "title": { "type": "string" },
+        "minutes": { "type": "integer" },
+        "variants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "exercises"],
+            "properties": { "id": { "type": "string" }, "exercises": { "type": "array", "items": { "$ref": "#/definitions/exercise" } } }
+          }
+        }
+      }
+    }
+  }
+}
