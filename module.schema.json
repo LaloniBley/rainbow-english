@@ -70,6 +70,7 @@
         "audio": { "$ref": "#/definitions/media" },
         "checkAudio": { "$ref": "#/definitions/media" },
         "teacher": { "type": "boolean", "description": "Ответы без ключа: идут тебе в отчёт с пометкой «проверь сам»" },
+        "answerKey": { "type": "array", "items": { "type": "string" }, "description": "Образец ответа для кнопки «Показать ответ» в заданиях без автопроверки" },
         "lines": { "type": "array", "description": "listen_repeat: строки текста; copy: [{id, sample}]" },
         "ttsLines": { "type": "boolean" },
         "text": { "type": "string" },

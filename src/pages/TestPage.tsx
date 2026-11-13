@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../store'
 import { href } from '../router'
 import { gradeFor, pickVariant, testState, blockTest } from '../logic'
-import { fieldsFor, type Answers } from '../fields'
+import { fieldsFor, scoreFields, type Answers } from '../fields'
 import { ExHeader, ResultView } from '../exercises/ExerciseView'
 import { TypeBody } from '../exercises/types'
 import type { ExResult, Module, Test, TestSession } from '../types'
@@ -19,10 +19,10 @@ function scoreSession(m: Module, test: Test, t: TestSession): Partial<TestSessio
     const a = (t.answers[ex.id] ?? {}) as Answers
     const fr = fieldsFor(ex).map((f) => {
       const c = f.check(a)
-      return { key: f.key, label: f.label, given: f.given(a), expected: f.expected, correct: c, firstTry: c }
+      const part = f.credit ? (c ? 1 : f.credit(a)) : undefined
+      return { key: f.key, label: f.label, given: f.given(a), expected: f.expected, correct: c, firstTry: c, ...(part != null ? { part, partFirst: part } : {}) }
     })
-    const scored = fr.filter((f) => f.correct !== null)
-    const sc = scored.length ? scored.filter((f) => f.correct).length / scored.length : null
+    const sc = scoreFields(fr, false)
     return {
       exId: ex.id,
       moduleId: m.id,
@@ -37,7 +37,7 @@ function scoreSession(m: Module, test: Test, t: TestSession): Partial<TestSessio
     }
   })
   const all = results.flatMap((r) => r.fields).filter((f) => f.correct !== null)
-  const points = all.filter((f) => f.correct).length
+  const points = Math.round(all.reduce((acc, f) => acc + (f.part ?? (f.correct ? 1 : 0)), 0) * 10) / 10
   const maxPoints = all.length
   const percent = maxPoints ? Math.round((points / maxPoints) * 100) : 0
   return { results, points, maxPoints, percent, grade: gradeFor(percent, m.grading) }
@@ -138,7 +138,7 @@ export default function TestPage({ moduleId, testId }: { moduleId: string; testI
         <div className={`grade grade-${viewed.grade}`}>{viewed.grade}</div>
         <h1>{test.title}</h1>
         <p>
-          {viewed.points} из {viewed.maxPoints} баллов ({viewed.percent}%), вариант {viewed.variant + 1}.
+          {String(viewed.points).replace('.', ',')} из {viewed.maxPoints} баллов ({viewed.percent}%), вариант {viewed.variant + 1}.
           {viewed.autoSubmitted ? ' Время вышло, работа сдана автоматически.' : ''}
         </p>
         {(viewed.grade ?? 0) < 3 && <p>Для перехода к следующему модулю нужна оценка «3» или выше. Пересдать можно через сутки, другим вариантом.</p>}
@@ -303,7 +303,7 @@ export default function TestPage({ moduleId, testId }: { moduleId: string; testI
                   <td>{new Date(s.startedAt).toLocaleDateString('ru-RU')}</td>
                   <td>{s.variant + 1}</td>
                   <td>
-                    {s.points}/{s.maxPoints}
+                    {String(s.points).replace('.', ',')}/{s.maxPoints}
                   </td>
                   <td>
                     <b>{s.grade}</b>

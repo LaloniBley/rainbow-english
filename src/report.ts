@@ -24,7 +24,16 @@ function exBlock(r: ExResult, title: string): string[] {
       }
     }
     for (const f of g) {
-      const mark = f.correct == null ? '?' : f.correct ? (f.firstTry ? '✓' : '✓ (со 2-й)') : '✗'
+      const mark =
+        f.correct == null
+          ? '?'
+          : f.correct
+            ? f.firstTry
+              ? '✓'
+              : '✓ (со 2-й)'
+            : f.part
+              ? `◐ ${Math.round(f.part * 100)}%`
+              : '✗'
       const exp = f.correct === false && f.expected ? `  → верно: ${f.expected}` : ''
       lines.push(`   ${mark} ${f.label}: ${f.given || '(пусто)'}${exp}`)
     }

@@ -23,6 +23,8 @@ export interface ExBase {
   note?: string
   /** ответы без ключа: идут в отчёт с пометкой «проверь сам» */
   teacher?: boolean
+  /** образец ответа для кнопки «Показать ответ» (для заданий без автопроверки) */
+  answerKey?: string[]
 }
 
 export interface ListenRepeatEx extends ExBase {
@@ -207,6 +209,9 @@ export interface FieldResult {
   /** null — без ключа */
   correct: boolean | null
   firstTry: boolean | null
+  /** частичный зачёт 0..1 (несколько ответов в одном вопросе) */
+  part?: number
+  partFirst?: number
 }
 
 export interface ExResult {
@@ -274,6 +279,8 @@ export interface StepState {
   completedAt?: number
   dictationDone?: boolean
   timeMs: number
+  /** начало повторного прохождения степа */
+  retakeAt?: number
 }
 
 export interface OutboxItem {

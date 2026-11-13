@@ -1729,6 +1729,68 @@ th {
   text-align: center;
 }
 
+/* ---------- показать ответ / повтор степа ---------- */
+.answer-key {
+  margin-top: 14px;
+  background: #eef7f0;
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+}
+.ak-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #23633a;
+}
+.answer-key ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.answer-key li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.ak-label {
+  color: var(--muted);
+  min-width: 0;
+}
+.ak-label::after {
+  content: ' →';
+}
+.ak-value {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.retake-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  background: #e9ecfa;
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  margin: 12px 0 20px;
+}
+.retake-note p {
+  margin: 0;
+}
+.retake-score,
+.sd-hint {
+  color: var(--muted);
+}
+.sd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
 @media (max-width: 720px) {
   :root {
     --tabbar-h: 62px;

@@ -9,6 +9,8 @@ export interface FieldDef {
   expected?: string
   /** true/false — проверено; null — без ключа */
   check: (a: Answers) => boolean | null
+  /** частичный зачёт 0..1; если нет — считается по check */
+  credit?: (a: Answers) => number
   given: (a: Answers) => string
   required: boolean
 }
@@ -28,6 +30,16 @@ export function fieldsFor(ex: Exercise): FieldDef[] {
         expected: it.answer && !teacher && !ex.free ? it.answer.join(', ') : undefined,
         required: true,
         given: (a) => str(a[it.id]),
+        credit:
+          it.multi && it.answer && !teacher && !ex.free
+            ? (a) => {
+                const sel = Array.isArray(a[it.id]) ? (a[it.id] as string[]) : []
+                const hits = sel.filter((x) => it.answer!.includes(x)).length
+                const wrong = sel.length - hits
+                // каждый верный выбор — доля балла, каждый лишний её отнимает
+                return Math.max(0, hits - wrong) / it.answer!.length
+              }
+            : undefined,
         check: (a) => {
           const v = a[it.id]
           if (teacher || ex.free || !it.answer) return null
@@ -147,3 +159,12 @@ export function fieldsFor(ex: Exercise): FieldDef[] {
 export function isFilled(f: FieldDef, a: Answers) {
   return f.given(a).trim().length > 0
 }
+
+/** доля баллов по полям с ключом */
+export function scoreFields(fr: FieldResultLike[], first: boolean): number | null {
+  const scored = fr.filter((f) => f.correct !== null)
+  if (!scored.length) return null
+  const sum = scored.reduce((acc, f) => acc + (first ? f.partFirst ?? (f.firstTry ? 1 : 0) : f.part ?? (f.correct ? 1 : 0)), 0)
+  return sum / scored.length
+}
+type FieldResultLike = { correct: boolean | null; firstTry: boolean | null; part?: number; partFirst?: number }

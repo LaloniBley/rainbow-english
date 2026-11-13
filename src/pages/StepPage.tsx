@@ -8,7 +8,6 @@ import {
   exKey,
   isStepComplete,
   isStepUnlocked,
-  needsDictation,
   stars,
   stepDoneCount,
   stepKey,
@@ -59,7 +58,9 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
       </div>
     )
 
-  const showDictation = needsDictation(progress, modules, m, s)
+  // список слов диктанта считается один раз при входе в степ, иначе диктант мог
+  // всплыть посреди степа, когда меняется прогресс (например, в начале нового модуля)
+  const showDictation = dictItems.length > 0 && !progress.steps[key]?.dictationDone
 
   if (showDictation)
     return (
@@ -84,6 +85,31 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
 
   const { done, total } = stepDoneCount(progress, m, s)
   const complete = isStepComplete(progress, m, s)
+  const retakeAt = progress.steps[key]?.retakeAt
+  const allEx = [...s.together, ...s.self]
+  const retakeDone = retakeAt
+    ? allEx.filter((e) => progress.results[exKey(m, e.id)]?.some((r) => r.finishedAt >= retakeAt)).length
+    : 0
+  const retakeComplete = !!retakeAt && retakeDone === allEx.length
+  const retakeScore = (() => {
+    if (!retakeAt) return null
+    const xs = allEx
+      .map((e) => progress.results[exKey(m, e.id)]?.find((r) => r.finishedAt >= retakeAt)?.scoreFirst)
+      .filter((x): x is number => x != null)
+    return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null
+  })()
+  const startRetake = () => {
+    update((p) => {
+      const st = (p.steps[key] ??= { timeMs: 0 })
+      st.retakeAt = Date.now()
+    })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  const stopRetake = () =>
+    update((p) => {
+      const st = p.steps[key]
+      if (st) delete st.retakeAt
+    })
   const idx = ref.index
   const next = steps[idx + 1]
 
@@ -121,14 +147,25 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
   return (
     <div className="page step-page" style={{ ['--mc' as string]: m.color }}>
       <StepTitle num={s.number} title={s.title} summing={s.summingUp} color={m.color} />
-      <div className="step-progress" aria-label={`Выполнено ${done} из ${total}`}>
+      <div className="step-progress" aria-label={`Выполнено ${retakeAt ? retakeDone : done} из ${total}`}>
         <div className="bar">
-          <i style={{ width: `${(done / total) * 100}%` }} />
+          <i style={{ width: `${((retakeAt ? retakeDone : done) / total) * 100}%` }} />
         </div>
         <span>
-          {done} из {total}
+          {retakeAt ? retakeDone : done} из {total}
         </span>
       </div>
+
+      {retakeAt && (
+        <aside className="retake-note">
+          <p>
+            <b>Повторное прохождение.</b> Задания снова пустые. В статистике и отчётах остаётся первый результат.
+          </p>
+          <button className="ghost small" onClick={stopRetake}>
+            {retakeComplete ? 'Показать первые ответы' : 'Отменить повтор'}
+          </button>
+        </aside>
+      )}
 
       {s.note && (
         <aside className="teacher-note">
@@ -148,10 +185,10 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
         </aside>
       )}
 
-      <Section title="Учимся вместе" sub="Учебник" exercises={s.together} moduleId={m.id} save={save} />
-      <Section title="Учимся самостоятельно" sub="Рабочая тетрадь" exercises={s.self} moduleId={m.id} save={save} />
+      <Section title="Учимся вместе" sub="Учебник" exercises={s.together} moduleId={m.id} save={save} retakeAt={retakeAt} canReveal={complete || justCompleted} />
+      <Section title="Учимся самостоятельно" sub="Рабочая тетрадь" exercises={s.self} moduleId={m.id} save={save} retakeAt={retakeAt} canReveal={complete || justCompleted} />
 
-      {(complete || justCompleted) && (
+      {(complete || justCompleted) && (!retakeAt || retakeComplete) && (
         <section className="step-done">
           <div className="sd-stars" aria-label={`${stars(sc)} из 3 звёзд`}>
             {[0, 1, 2].map((i) => (
@@ -160,6 +197,10 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
           </div>
           <h2>Step {s.number} пройден</h2>
           <p>Точность с первой попытки: {sc == null ? '—' : `${Math.round(sc * 100)}%`}.</p>
+          {retakeComplete && (
+            <p className="retake-score">Повторное прохождение: {retakeScore == null ? '—' : `${Math.round(retakeScore * 100)}%`}.</p>
+          )}
+          <p className="sd-hint">Под каждым заданием теперь есть кнопка «Показать ответ».</p>
           {s.vocab.length > 0 && (
             <div className="new-words">
               <h3>Новые слова в словарике</h3>
@@ -175,6 +216,10 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
               </div>
             </div>
           )}
+          <div className="sd-actions">
+          <button className="ghost" onClick={startRetake}>
+            Пройти степ заново
+          </button>
           {s.summingUp && bt ? (
             <a className="primary big" href={href({ name: 'test', moduleId: m.id, testId: bt.id })}>
               К контрольной
@@ -188,13 +233,30 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
               На карту
             </a>
           )}
+          </div>
         </section>
       )}
     </div>
   )
 }
 
-function Section({ title, sub, exercises, moduleId, save }: { title: string; sub: string; exercises: Exercise[]; moduleId: string; save: (ex: Exercise) => (r: ExResult) => void }) {
+function Section({
+  title,
+  sub,
+  exercises,
+  moduleId,
+  save,
+  retakeAt,
+  canReveal
+}: {
+  title: string
+  sub: string
+  exercises: Exercise[]
+  moduleId: string
+  save: (ex: Exercise) => (r: ExResult) => void
+  retakeAt?: number
+  canReveal: boolean
+}) {
   const { progress } = useStore()
     if (!exercises.length) return null
     return (
@@ -205,12 +267,17 @@ function Section({ title, sub, exercises, moduleId, save }: { title: string; sub
         </div>
         {exercises.map((ex) => (
           <ExerciseView
-            key={ex.id}
+            key={`${ex.id}-${retakeAt ?? 0}`}
             ex={ex}
             moduleId={moduleId}
-            previous={progress.results[exKey(moduleId, ex.id)]?.[0]}
+            previous={
+              retakeAt
+                ? progress.results[exKey(moduleId, ex.id)]?.filter((r) => r.finishedAt >= retakeAt).pop()
+                : progress.results[exKey(moduleId, ex.id)]?.[0]
+            }
             onComplete={save(ex)}
             authorMode={progress.settings.authorMode}
+            canReveal={canReveal}
           />
         ))}
       </section>
