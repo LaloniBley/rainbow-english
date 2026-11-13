@@ -12,6 +12,8 @@ export default function Settings() {
   const [drag, setDrag] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const progRef = useRef<HTMLInputElement>(null)
+  const [pwd, setPwd] = useState('')
+  const [pwdErr, setPwdErr] = useState('')
 
   const onFile = async (f?: File | null) => {
     if (!f) return
@@ -171,19 +173,45 @@ export default function Settings() {
 
       <details className="panel author">
         <summary>Для автора курса</summary>
-        <label className="toggle">
-          <input
-            type="checkbox"
-            checked={progress.settings.authorMode}
-            onChange={(e) => {
-              const on = e.target.checked
-              if (on && !window.confirm('Режим автора открывает все степы и контрольные без ограничений и показывает id упражнений. Включить?')) return
-              update((p) => (p.settings.authorMode = on))
+        {progress.settings.authorMode ? (
+          <div className="author-on">
+            <p>Режим автора включён: все степы и контрольные открыты, видны id упражнений.</p>
+            <button className="ghost" onClick={() => update((p) => (p.settings.authorMode = false))}>
+              Выключить режим автора
+            </button>
+          </div>
+        ) : (
+          <form
+            className="author-form"
+            onSubmit={async (e) => {
+              e.preventDefault()
+              if (await checkAuthorPassword(pwd)) {
+                update((p) => (p.settings.authorMode = true))
+                setPwd('')
+                setPwdErr('')
+              } else setPwdErr('Неверный пароль.')
             }}
-          />
-          <span>Режим автора: всё открыто, видны id упражнений</span>
-        </label>
+          >
+            <p className="muted">Режим автора открывает все степы и контрольные без ограничений. Нужен пароль.</p>
+            <div className="row">
+              <input type="password" value={pwd} onChange={(e) => { setPwd(e.target.value); setPwdErr('') }} placeholder="Пароль" aria-label="Пароль автора" autoComplete="off" />
+              <button className="primary" disabled={!pwd}>
+                Включить
+              </button>
+            </div>
+            {pwdErr && <p className="pwd-err">{pwdErr}</p>}
+          </form>
+        )}
       </details>
     </div>
   )
+}
+
+// хеш SHA-256 пароля автора: сам пароль в коде не хранится
+const AUTHOR_HASH = '9446e9b85dbffd58257efef29ef80bc412bfe6fde305ae652f80650b6d15beeb'
+
+async function checkAuthorPassword(pwd: string) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd.trim()))
+  const hex = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
+  return hex === AUTHOR_HASH
 }

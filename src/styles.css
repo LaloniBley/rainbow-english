@@ -1750,3 +1750,19 @@ th {
     padding: 18px 16px;
   }
 }
+
+.author-form input {
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  background: #fbfcff;
+  width: 220px;
+}
+.author-form .row,
+.author-on {
+  margin-top: 10px;
+}
+.pwd-err {
+  color: var(--bad);
+  margin: 8px 0 0;
+}
