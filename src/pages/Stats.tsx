@@ -1,5 +1,5 @@
 import { useStore } from '../store'
-import { allSteps, dateKey, exKey, isStepComplete, learnedWords, stepExercises, stepScore, streak, wordKey } from '../logic'
+import { allSteps, dateKey, isStepComplete, officialResult, learnedWords, stepExercises, stepScore, streak, wordKey } from '../logic'
 import { SKILL_RU, moduleSummary } from '../report'
 import { plural } from './Home'
 
@@ -14,7 +14,7 @@ export default function Stats() {
   const skills: Record<string, number[]> = {}
   for (const r of steps)
     for (const ex of stepExercises(r.s)) {
-      const res = progress.results[exKey(r.m, ex.id)]?.[0]
+      const res = officialResult(progress, r.m, r.s, ex.id)
       if (res?.scoreFirst != null) (skills[ex.skill] ??= []).push(res.scoreFirst)
     }
 

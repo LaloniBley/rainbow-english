@@ -49,7 +49,8 @@ export function ExerciseView({
   previous,
   onComplete,
   authorMode,
-  canReveal
+  canReveal,
+  onPhase
 }: {
   ex: Exercise
   moduleId: string
@@ -58,6 +59,8 @@ export function ExerciseView({
   authorMode?: boolean
   /** можно показать ответ (степ завершён) */
   canReveal?: boolean
+  /** pending — сдано, идёт вторая попытка; redo — проходится заново; idle — результат сохранён */
+  onPhase?: (s: 'pending' | 'redo' | 'idle') => void
 }) {
   const fields = useMemo(() => fieldsFor(ex), [ex])
   // есть ли у упражнения ключ (хотя бы одно поле проверяется автоматически)
@@ -112,6 +115,7 @@ export function ExerciseView({
     setResult(r)
     setPhase('done')
     if (!previous || redo) onComplete(r)
+    onPhase?.('idle')
   }
 
   const check = () => {
@@ -140,6 +144,7 @@ export function ExerciseView({
       if (wrong === 0) finalize(m, answers)
       else {
         setPhase('retry')
+        onPhase?.('pending')
         setMsg(`Ошибок: ${wrong}. Исправь подсвеченное — это вторая попытка.`)
       }
     } else finalize(m, answers)
@@ -239,6 +244,7 @@ export function ExerciseView({
                 setShowKey(false)
                 started.current = Date.now()
                 setPhase('answer')
+                onPhase?.('redo')
                 setRedo(true)
                 setMsg('Повторное прохождение: в статистике остаётся первый результат.')
               }}

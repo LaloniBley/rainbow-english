@@ -12,7 +12,7 @@ function kindsFor(it: DictItem): Kind[] {
   if (it.mode === 'choose') return ['choose']
   const k: Kind[] = ['audio']
   if (it.word.img) k.push('picture')
-  if (it.word.ru && !it.word.name) k.push('ru')
+  if (it.word.ru) k.push('ru')
   return k
 }
 

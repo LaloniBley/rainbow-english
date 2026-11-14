@@ -1,5 +1,5 @@
 import type { AppConfig, DictationResult, ExResult, Module, OutboxItem, Progress, Step, TestSession } from './types'
-import { exKey, sourceLabel, stepExercises, stepScore, learnedWords, wordKey, streak } from './logic'
+import { officialResult, sourceLabel, stepExercises, stepScore, learnedWords, wordKey, streak } from './logic'
 
 const pct = (x: number | null | undefined) => (x == null ? '—' : `${Math.round(x * 100)}%`)
 const min = (ms: number) => `${Math.max(1, Math.round(ms / 60000))} мин`
@@ -47,7 +47,7 @@ export function stepReport(p: Progress, m: Module, s: Step, name: string): { sub
   const dict = [...p.dictations].reverse().find((d) => d.moduleId === m.id && d.stepId === s.id)
   const score = stepScore(p, m, s)
   const lines: string[] = []
-  lines.push(`${name}: Step ${s.number} (${m.title}) завершён.`)
+  lines.push(`${name}: Step ${s.number} (${m.title}) ${st?.baseAt ? 'пройден повторно — в статистике теперь этот результат' : 'завершён'}.`)
   lines.push(`Точность с первой попытки: ${pct(score)}. Время: ${min(st?.timeMs ?? 0)}.`)
   if (dict) lines.push(dictLine(dict))
   lines.push('')
@@ -66,7 +66,7 @@ export function stepReport(p: Progress, m: Module, s: Step, name: string): { sub
   for (const [title, exs] of sections) {
     lines.push(`== ${title} ==`)
     for (const ex of exs) {
-      const r = p.results[exKey(m, ex.id)]?.[0]
+      const r = officialResult(p, m, s, ex.id)
       const t = `${sourceLabel(ex.source)} [${ex.id}]`
       if (!r) {
         lines.push(`${t} — не выполнено`)
@@ -80,7 +80,7 @@ export function stepReport(p: Progress, m: Module, s: Step, name: string): { sub
     }
     lines.push('')
   }
-  return { subject: `Rainbow English: Step ${s.number} — ${pct(score)}`, message: lines.join('\n') }
+  return { subject: `Rainbow English: Step ${s.number}${st?.baseAt ? ' (повторно)' : ''} — ${pct(score)}`, message: lines.join('\n') }
 }
 
 function dictLine(d: DictationResult) {
@@ -128,7 +128,7 @@ export function moduleSummary(p: Progress, modules: Module[], m: Module, name: s
   const skills: Record<string, number[]> = {}
   for (const s of m.steps)
     for (const ex of stepExercises(s)) {
-      const r = p.results[exKey(m, ex.id)]?.[0]
+      const r = officialResult(p, m, s, ex.id)
       if (r?.scoreFirst != null) (skills[ex.skill] ??= []).push(r.scoreFirst)
     }
   lines.push('')

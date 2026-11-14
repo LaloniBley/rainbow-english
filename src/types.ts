@@ -281,6 +281,8 @@ export interface StepState {
   timeMs: number
   /** начало повторного прохождения степа */
   retakeAt?: number
+  /** начало прохождения, которое идёт в статистику (последний завершённый повтор) */
+  baseAt?: number
 }
 
 export interface OutboxItem {

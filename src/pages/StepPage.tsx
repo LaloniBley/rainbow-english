@@ -6,6 +6,7 @@ import {
   blockTest,
   dictationFor,
   exKey,
+  officialResult,
   isStepComplete,
   isStepUnlocked,
   stars,
@@ -17,11 +18,13 @@ import {
 import { ExerciseView } from '../exercises/ExerciseView'
 import Dictation from './Dictation'
 import { stepReport } from '../report'
-import type { ExResult, Exercise } from '../types'
+import type { ExResult, Exercise, Step } from '../types'
 import { Img, Speak } from '../components/media'
 
 export default function StepPage({ moduleId, stepId }: { moduleId: string; stepId: string }) {
   const { modules, progress, update, queueReport, name } = useStore()
+  // сданные, но ещё не сохранённые (идёт вторая попытка) и перепроходимые задания — для полоски
+  const [live, setLive] = useState<Record<string, 'pending' | 'redo'>>({})
   const m = modules.find((x) => x.id === moduleId)
   const s = m?.steps.find((x) => x.id === stepId)
   const steps = allSteps(modules)
@@ -90,26 +93,31 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
   const retakeDone = retakeAt
     ? allEx.filter((e) => progress.results[exKey(m, e.id)]?.some((r) => r.finishedAt >= retakeAt)).length
     : 0
+  // полоска: задание считается выполненным сразу после «Проверить», даже если идёт вторая попытка,
+  // и снова пустым, как только нажато «Пройти ещё раз»
+  const barDone = allEx.filter((e) => {
+    const st = live[e.id]
+    if (st === 'pending') return true
+    if (st === 'redo') return false
+    const list = progress.results[exKey(m, e.id)]
+    return retakeAt ? !!list?.some((r) => r.finishedAt >= retakeAt) : !!list?.length
+  }).length
   const retakeComplete = !!retakeAt && retakeDone === allEx.length
-  const retakeScore = (() => {
-    if (!retakeAt) return null
-    const xs = allEx
-      .map((e) => progress.results[exKey(m, e.id)]?.find((r) => r.finishedAt >= retakeAt)?.scoreFirst)
-      .filter((x): x is number => x != null)
-    return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null
-  })()
   const startRetake = () => {
     update((p) => {
       const st = (p.steps[key] ??= { timeMs: 0 })
       st.retakeAt = Date.now()
     })
+    setLive({})
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-  const stopRetake = () =>
+  const stopRetake = () => {
+    setLive({})
     update((p) => {
       const st = p.steps[key]
       if (st) delete st.retakeAt
     })
+  }
   const idx = ref.index
   const next = steps[idx + 1]
 
@@ -130,6 +138,16 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
         st.completedAt = Date.now()
         becameComplete = true
       }
+      // повтор степа завершён: в статистику идёт он
+      if (st.retakeAt && st.baseAt !== st.retakeAt) {
+        const ra = st.retakeAt
+        const retakeAll = all.every((e) => p.results[exKey(m, e.id)]?.some((x) => x.finishedAt >= ra))
+        if (retakeAll) {
+          st.baseAt = ra
+          delete st.retakeAt
+          becameComplete = true
+        }
+      }
     })
     if (becameComplete) {
       setJustCompleted(true)
@@ -141,28 +159,36 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
     }
   }
 
+  const onPhase = (exId: string) => (ph: 'pending' | 'redo' | 'idle') =>
+    setLive((cur) => {
+      const n = { ...cur }
+      if (ph === 'idle') delete n[exId]
+      else n[exId] = ph
+      return n
+    })
+
   const sc = stepScore(progress, m, s)
   const bt = blockTest(m)
 
   return (
     <div className="page step-page" style={{ ['--mc' as string]: m.color }}>
       <StepTitle num={s.number} title={s.title} summing={s.summingUp} color={m.color} />
-      <div className="step-progress" aria-label={`Выполнено ${retakeAt ? retakeDone : done} из ${total}`}>
+      <div className="step-progress" aria-label={`Выполнено ${barDone} из ${total}`}>
         <div className="bar">
-          <i style={{ width: `${((retakeAt ? retakeDone : done) / total) * 100}%` }} />
+          <i style={{ width: `${(barDone / total) * 100}%` }} />
         </div>
         <span>
-          {retakeAt ? retakeDone : done} из {total}
+          {barDone} из {total}
         </span>
       </div>
 
       {retakeAt && (
         <aside className="retake-note">
           <p>
-            <b>Повторное прохождение.</b> Задания снова пустые. В статистике и отчётах остаётся первый результат.
+            <b>Повторное прохождение.</b> Задания снова пустые. Когда пройдёшь все, в статистику пойдёт новый результат.
           </p>
           <button className="ghost small" onClick={stopRetake}>
-            {retakeComplete ? 'Показать первые ответы' : 'Отменить повтор'}
+            Отменить повтор
           </button>
         </aside>
       )}
@@ -185,8 +211,8 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
         </aside>
       )}
 
-      <Section title="Учимся вместе" sub="Учебник" exercises={s.together} moduleId={m.id} save={save} retakeAt={retakeAt} canReveal={complete || justCompleted} />
-      <Section title="Учимся самостоятельно" sub="Рабочая тетрадь" exercises={s.self} moduleId={m.id} save={save} retakeAt={retakeAt} canReveal={complete || justCompleted} />
+      <Section title="Учимся вместе" sub="Учебник" exercises={s.together} step={s} moduleId={m.id} save={save} retakeAt={retakeAt} canReveal={complete || justCompleted} onPhase={onPhase} />
+      <Section title="Учимся самостоятельно" sub="Рабочая тетрадь" exercises={s.self} step={s} moduleId={m.id} save={save} retakeAt={retakeAt} canReveal={complete || justCompleted} onPhase={onPhase} />
 
       {(complete || justCompleted) && (!retakeAt || retakeComplete) && (
         <section className="step-done">
@@ -197,9 +223,6 @@ export default function StepPage({ moduleId, stepId }: { moduleId: string; stepI
           </div>
           <h2>Step {s.number} пройден</h2>
           <p>Точность с первой попытки: {sc == null ? '—' : `${Math.round(sc * 100)}%`}.</p>
-          {retakeComplete && (
-            <p className="retake-score">Повторное прохождение: {retakeScore == null ? '—' : `${Math.round(retakeScore * 100)}%`}.</p>
-          )}
           <p className="sd-hint">Под каждым заданием теперь есть кнопка «Показать ответ».</p>
           {s.vocab.length > 0 && (
             <div className="new-words">
@@ -247,10 +270,14 @@ function Section({
   moduleId,
   save,
   retakeAt,
-  canReveal
+  canReveal,
+  onPhase,
+  step
 }: {
   title: string
   sub: string
+  step: Step
+  onPhase: (exId: string) => (ph: 'pending' | 'redo' | 'idle') => void
   exercises: Exercise[]
   moduleId: string
   save: (ex: Exercise) => (r: ExResult) => void
@@ -273,11 +300,12 @@ function Section({
             previous={
               retakeAt
                 ? progress.results[exKey(moduleId, ex.id)]?.filter((r) => r.finishedAt >= retakeAt).pop()
-                : progress.results[exKey(moduleId, ex.id)]?.[0]
+                : officialResult(progress, moduleId, step, ex.id)
             }
             onComplete={save(ex)}
             authorMode={progress.settings.authorMode}
             canReveal={canReveal}
+            onPhase={onPhase(ex.id)}
           />
         ))}
       </section>

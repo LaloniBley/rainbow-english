@@ -1,4 +1,4 @@
-import type { Exercise, Grading, Module, Progress, Step, TestSession, VocabWord } from './types'
+import type { ExResult, Exercise, Grading, Module, Progress, Step, TestSession, VocabWord } from './types'
 
 export const DAY = 24 * 60 * 60 * 1000
 export const DICTATION_PASS = 0.8
@@ -20,6 +20,14 @@ export function allSteps(modules: Module[]): StepRef[] {
 export const stepKey = (m: Module, s: Step) => `${m.id}/${s.id}`
 export const exKey = (m: Module | string, exId: string) => `${typeof m === 'string' ? m : m.id}/${exId}`
 export const wordKey = (m: Module | string, w: VocabWord) => `${typeof m === 'string' ? m : m.id}/${w.id}`
+
+/** зачётная попытка: первая в последнем завершённом прохождении степа */
+export function officialResult(p: Progress, m: Module | string, s: Step, exId: string): ExResult | undefined {
+  const list = p.results[exKey(m, exId)]
+  if (!list?.length) return undefined
+  const base = p.steps[`${typeof m === 'string' ? m : m.id}/${s.id}`]?.baseAt
+  return (base ? list.find((r) => r.finishedAt >= base) : undefined) ?? list[0]
+}
 
 export function stepExercises(s: Step): Exercise[] {
   return [...s.together, ...s.self]
@@ -232,7 +240,7 @@ export function stars(score: number | null) {
 
 export function stepScore(p: Progress, m: Module, s: Step): number | null {
   const scores = stepExercises(s)
-    .map((e) => p.results[exKey(m, e.id)]?.[0]?.scoreFirst)
+    .map((e) => officialResult(p, m, s, e.id)?.scoreFirst)
     .filter((x): x is number => typeof x === 'number')
   if (!scores.length) return null
   return scores.reduce((a, b) => a + b, 0) / scores.length

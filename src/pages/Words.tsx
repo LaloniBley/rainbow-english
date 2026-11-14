@@ -9,7 +9,8 @@ import type { Module, VocabWord } from '../types'
 type W = { m: Module; w: VocabWord; key: string; box: number }
 
 function Flashcards({ words, onRate }: { words: W[]; onRate: (key: string, ok: boolean) => void }) {
-  const deck = useMemo(() => shuffle(words, Date.now() % 9999).slice(0, 15), [words])
+  // колода тасуется один раз: оценка карточки меняет прогресс, и без этого колода перемешивалась бы заново
+  const [deck, setDeck] = useState(() => shuffle(words, Date.now() % 9999).slice(0, 15))
   const [i, setI] = useState(0)
   const [open, setOpen] = useState(false)
   if (!deck.length) return null
@@ -17,7 +18,7 @@ function Flashcards({ words, onRate }: { words: W[]; onRate: (key: string, ok: b
     return (
       <div className="game-end">
         <p>Колода пройдена: {deck.length} {deck.length < 5 ? 'карточки' : 'карточек'}.</p>
-        <button className="primary" onClick={() => { setI(0); setOpen(false) }}>Ещё раз</button>
+        <button className="primary" onClick={() => { setDeck(shuffle(words, Date.now() % 9999).slice(0, 15)); setI(0); setOpen(false) }}>Ещё раз</button>
       </div>
     )
   const c = deck[i]
@@ -28,7 +29,7 @@ function Flashcards({ words, onRate }: { words: W[]; onRate: (key: string, ok: b
         {!open ? (
           <>
             {c.w.img ? <Img moduleId={c.m.id} src={c.w.img} className="flash-img" /> : null}
-            <span className="flash-front">{c.w.name ? 'Имя: нажми, чтобы услышать и увидеть' : c.w.ru ?? 'Нажми, чтобы открыть'}</span>
+            <span className="flash-front">{c.w.ru ?? (c.w.name ? 'Имя: нажми, чтобы услышать и увидеть' : 'Нажми, чтобы открыть')}</span>
           </>
         ) : (
           <>
